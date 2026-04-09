@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skechers Lucky Gallery - Ultra Slow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'sans-serif';
+        }
+
+        /* Latar Belakang Utama Dinamis */
+        #dynamic-bg {
+            height: 100vh;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            position: fixed;
+            width: 100%;
+            z-index: -1;
+            transition: background-image 1.5s ease-in-out;
+            filter: brightness(0.4);
+        }
+
+        /* Kontainer Galeri Berjalan */
+        .scroller-container {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow: hidden;
+            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+        }
+
+        .scroller-inner {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            /* Kecepatan dikurangi 30% lagi dari sebelumnya (total sangat lambat) */
+            animation: scrollDown 240s linear infinite;
+            padding: 100px 0;
+        }
+
+        @keyframes scrollDown {
+            from { transform: translateY(-50%); }
+            to { transform: translateY(0); }
+        }
+
+        .scroller-container:hover .scroller-inner {
+            animation-play-state: paused;
+        }
+
+        /* Kartu Produk */
+        .product-item {
+            width: 360px;
+            max-width: 90vw;
+            border-radius: 28px;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://cdn.phototourl.com/free/2026-04-09-fd53cfea-19f8-4363-a280-d9f2afee9fe9.jpg');
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Badge Informasi */
+        .badge-id { position: absolute; top: 15px; left: 15px; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 4px 10px; border-radius: 8px; font-family: monospace; font-size: 11px; z-index: 10; border: 1px solid rgba(255,255,255,0.2); }
+        .badge-original { position: absolute; top: 15px; right: 15px; background: #fbbf24; color: #000; padding: 5px 14px; border-radius: 50px; font-weight: 900; font-size: 10px; text-transform: uppercase; z-index: 10; }
+        .badge-vip { position: absolute; bottom: 130px; left: 15px; background: #be123c; color: #fff; padding: 2px 10px; border-radius: 4px; font-weight: bold; font-size: 10px; z-index: 10; }
+
+        .product-img { width: 100%; height: auto; display: block; padding: 20px; margin-top: 20px; filter: drop-shadow(0 15px 20px rgba(0,0,0,0.6)); }
+
+        /* Tombol Neon Klap-Klip */
+        .btn-neon {
+            background: #fff;
+            color: #000;
+            padding: 12px;
+            border-radius: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s;
+            animation: neonBlink 3s infinite;
+        }
+
+        @keyframes neonBlink {
+            0% { box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; border: 2px solid #ff0000; }
+            20% { box-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00; border: 2px solid #00ff00; }
+            40% { box-shadow: 0 0 10px #0000ff, 0 0 20px #0000ff; border: 2px solid #0000ff; }
+            60% { box-shadow: 0 0 10px #ffff00, 0 0 20px #ffff00; border: 2px solid #ffff00; }
+            80% { box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff; border: 2px solid #ff00ff; }
+            100% { box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff; border: 2px solid #00ffff; }
+        }
+
+        /* Modal Pop-up */
+        #modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 35px;
+            text-align: center;
+            color: black;
+            max-width: 95%;
+            width: 450px;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .price-text { font-size: 2.5rem; font-weight: 900; color: #be123c; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <div id="dynamic-bg"></div>
+
+    <div class="scroller-container">
+        <div class="scroller-inner" id="gallery-content"></div>
+    </div>
+
+    <!-- Modal Keberuntungan -->
+    <div id="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 class="text-sm font-black text-gray-500 uppercase tracking-widest">Penawaran Terbatas Untuk Anda</h2>
+            <div id="modal-img-container" class="my-4 bg-gray-100 rounded-2xl p-4 flex justify-center">
+                <img id="modal-product-img" src="" class="h-40 object-contain drop-shadow-xl" alt="Sepatu">
+            </div>
+            <div id="modal-product-id" class="text-xs font-mono text-gray-400">ID: #00000</div>
+            <div id="lucky-price" class="price-text">Rp 0</div>
+            <p id="discount-info" class="text-green-600 font-bold text-sm mb-4"></p>
+            <p class="text-[10px] text-gray-400 mb-6 px-4">Harga selalu berubah-ubah untuk orderan ini tergantung keberuntungan anda. Segera selesaikan pesanan!</p>
+            
+            <a id="checkout-link" href="https://skechers-indonesia.github.io/Skechers-insonesia.com/" class="block w-full bg-black text-white py-4 rounded-2xl font-black text-lg hover:bg-gray-800 transition-all shadow-xl mb-3">LANJUTKAN BELANJA</a>
+            <button onclick="closeModal()" class="text-gray-400 text-sm font-bold hover:text-black">Kembali</button>
+            
+            <div id="device-tag" class="text-[9px] text-gray-400 mt-4 uppercase tracking-tighter"></div>
+        </div>
+    </div>
+
+    <script>
+        // Latar belakang utama sesuai permintaan sebelumnya
+        const bgImages = [
+            "https://cdn.phototourl.com/free/2026-04-09-9db65dc0-4abc-4ad5-9958-dbab2bd35406.jpg",
+            "https://cdn.phototourl.com/free/2026-04-09-5abfd9c0-3b80-440e-a007-305cb361417c.jpg",
+            "https://cdn.phototourl.com/free/2026-04-09-7181064b-6bee-438b-a3b7-68dbcb7712da.jpg"
+        ];
+
+        const productImages = [
+            "https://iili.io/BlNT9i7.md.jpg", "https://iili.io/BlNTJf9.md.jpg", "https://iili.io/BlNIZHG.md.jpg",
+            "https://iili.io/BlNIyVS.md.jpg", "https://iili.io/BlNTTUg.md.jpg", "https://iili.io/BlNTwzl.md.jpg",
+            "https://iili.io/BlNTsLB.md.jpg", "https://iili.io/BlNuxI4.md.jpg", "https://iili.io/BlNuR49.md.jpg",
+            "https://iili.io/BlNuwva.md.jpg", "https://iili.io/BlNuQj4.md.jpg", "https://iili.io/BlNATAJ.md.jpg",
+            "https://iili.io/BlNAMNf.md.jpg", "https://iili.io/BlNAOl9.md.jpg", "https://iili.io/BlNA6iB.md.jpg",
+            "https://iili.io/BlNApxR.md.jpg", "https://iili.io/BlNAZHg.md.jpg", "https://iili.io/BlNRAJe.md.jpg",
+            "https://iili.io/BlNR1qB.md.jpg", "https://iili.io/BlNRE0P.md.jpg", "https://iili.io/BlNRGg1.md.jpg",
+            "https://iili.io/BlNRXea.md.jpg", "https://iili.io/BlNRymb.md.jpg", "https://iili.io/BlN53BV.md.jpg",
+            "https://iili.io/BlN5npa.md.jpg", "https://iili.io/BlN5IQR.md.jpg", "https://iili.io/BlN5MCl.md.jpg",
+            "https://iili.io/BlN5UGV.md.jpg", "https://iili.io/BlN7BP2.md.jpg", "https://iili.io/BlN7MNa.md.jpg",
+            "https://iili.io/BlN7UDG.md.jpg", "https://iili.io/BlNY9iQ.md.jpg", "https://iili.io/BlNYTgI.md.jpg",
+            "https://iili.io/BlNYGgS.md.jpg", "https://iili.io/BlNYUdP.md.jpg", "https://iili.io/BlNYpkX.md.jpg",
+            "https://iili.io/BlNaMCv.md.jpg", "https://iili.io/BlNa4F2.md.jpg", "https://iili.io/BlNc2AF.md.jpg",
+            "https://iili.io/BlNcNKQ.md.jpg", "https://iili.io/BlNlJf4.md.jpg", "https://iili.io/BlNlQBj.md.jpg",
+            "https://iili.io/BlN0uCG.md.jpg", "https://iili.io/BlN01je.md.jpg", "https://iili.io/BlN0UMJ.md.jpg",
+            "https://iili.io/BlN19cl.md.jpg", "https://iili.io/BlN1qMb.md.jpg", "https://iili.io/BlN1xSV.md.jpg",
+            "https://iili.io/BlN1VDX.md.jpg", "https://iili.io/BlN1bb1.md.jpg", "https://iili.io/BlNEFJp.md.jpg"
+        ];
+
+        // Simulasi Identifikasi Perangkat
+        const getDeviceFingerprint = () => {
+            const nav = window.navigator;
+            const screen = window.screen;
+            let str = nav.userAgent + nav.language + screen.colorDepth + screen.width + screen.height;
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = (hash << 5) - hash + str.charCodeAt(i);
+                hash |= 0;
+            }
+            return Math.abs(hash).toString(16);
+        };
+
+        const deviceFingerprint = getDeviceFingerprint();
+        const retailPrice = 1499000;
+        let prices = { high: [], random: [] };
+        let bgIndex = 0;
+        let usedIds = new Set();
+
+        function generateUniqueId() {
+            let id;
+            do { id = Math.floor(10000 + Math.random() * 90000).toString(); } while (usedIds.has(id));
+            usedIds.add(id);
+            return id;
+        }
+
+        // Rotasi Latar Belakang
+        function changeBg() {
+            const bgElement = document.getElementById('dynamic-bg');
+            bgElement.style.backgroundImage = `url('${bgImages[bgIndex]}')`;
+            bgIndex = (bgIndex + 1) % bgImages.length;
+        }
+        setInterval(changeBg, 7000); 
+        changeBg();
+
+        // Logika Harga (Acak tiap 30 detik)
+        function updatePrices() {
+            prices.high = [];
+            while(prices.high.length < 5) {
+                let p = Math.floor(Math.random() * (999000 - 555000 + 1)) + 555000;
+                if(!prices.high.includes(p)) prices.high.push(p);
+            }
+            prices.random = [];
+            for(let i=0; i<50; i++) {
+                let p = Math.floor(Math.random() * (499000 - 199000 + 1)) + 199000;
+                prices.random.push(p);
+            }
+        }
+        setInterval(updatePrices, 30000);
+        updatePrices();
+
+        const gallery = document.getElementById('gallery-content');
+        function populateGallery() {
+            productImages.forEach((src, index) => {
+                const productId = generateUniqueId();
+                const isHigh = index < 5;
+                const item = document.createElement('div');
+                item.className = 'product-item';
+                item.innerHTML = `
+                    <div class="badge-id">ID: ${productId}</div>
+                    <div class="badge-original">Original 100%</div>
+                    ${isHigh ? '<div class="badge-vip">BEST SELLER</div>' : ''}
+                    <img src="${src}" class="product-img" alt="Skechers">
+                    <div class="p-6">
+                        <button onclick="showLuckyPrice('${productId}', '${src}', ${isHigh})" class="btn-neon">
+                            MILIKI SEKARANG
+                            <div class="text-[9px] font-bold block mt-1 text-black opacity-80">PROMO HARGA 199K-499K</div>
+                        </button>
+                    </div>
+                `;
+                gallery.appendChild(item);
+            });
+        }
+
+        populateGallery();
+        populateGallery(); // Loop seamless
+
+        function showLuckyPrice(id, imgSrc, isHigh) {
+            const luckyPriceEl = document.getElementById('lucky-price');
+            const discountInfoEl = document.getElementById('discount-info');
+            const selectedIdEl = document.getElementById('modal-product-id');
+            const modalImg = document.getElementById('modal-product-img');
+            const deviceTag = document.getElementById('device-tag');
+            
+            let targetPrice = isHigh ? prices.high[Math.floor(Math.random() * prices.high.length)] : prices.random[Math.floor(Math.random() * prices.random.length)];
+            
+            const formattedPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(targetPrice);
+            const savings = retailPrice - targetPrice;
+            const discountPercent = Math.round((savings / retailPrice) * 100);
+            const formattedSavings = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(savings);
+
+            modalImg.src = imgSrc;
+            luckyPriceEl.innerText = formattedPrice;
+            discountInfoEl.innerText = `LUCKY DEAL: Diskon ${discountPercent}% (Hemat ${formattedSavings})`;
+            selectedIdEl.innerText = `ITEM ID: #${id}`;
+            deviceTag.innerText = `Device Verified: SECURE-${deviceFingerprint}`;
+            
+            document.getElementById('modal-overlay').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
